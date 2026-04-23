@@ -1,0 +1,20 @@
+{
+  "name": "my-pokemon-battle-simulate",
+  "version": "1.0.0",
+  "description": "Pokemon battle simulator microservice using @pkmn/sim",
+  "main": "src/server.js",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@pkmn/sim": "^0.10.7",
+    "@pkmn/sets": "^5.2.0",
+    "@pkmn/dex": "^0.10.7",
+    "express": "^4.21.2"
+  }
+}
