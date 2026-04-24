@@ -1,6 +1,11 @@
+import { Dex } from '@pkmn/sim';
+
 export function buildSet(entry) {
-  const species = String(entry.species || entry.name || '').trim();
-  if (!species) throw new Error('pokemon entry missing species');
+  const rawSpecies = String(entry.species || entry.name || '').trim();
+  if (!rawSpecies) throw new Error('pokemon entry missing species');
+
+  const resolved = Dex.species.get(rawSpecies);
+  const species = resolved?.exists ? resolved.name : rawSpecies;
 
   return {
     name: entry.nickname || species,

@@ -35,14 +35,16 @@ export function parseLog(lines, startingTurn = 0) {
       }
       case 'switch':
       case 'drag': {
-        const { side, name } = parseIdent(parts[1]);
+        const { side } = parseIdent(parts[1]);
+        const details = parts[2] || '';
+        const speciesFromDetails = details.split(',')[0].trim();
         const cond = parseCondition(parts[3]);
         events.push({
           turn: currentTurn,
           type: 'switch',
           side,
-          name,
-          details: parts[2],
+          name: speciesFromDetails,
+          details,
           hp: cond?.hp ?? null,
           maxHp: cond?.maxHp ?? null,
         });
