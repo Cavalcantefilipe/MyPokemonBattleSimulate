@@ -46,6 +46,9 @@ app.post('/simulate', requireInternalToken, async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('simulate error:', err);
+    if (err.code === 'UNKNOWN_SPECIES') {
+      return res.status(400).json({ error: 'unknown_species', message: err.message });
+    }
     res.status(500).json({ error: 'simulation_failed', message: err.message });
   }
 });
@@ -72,6 +75,9 @@ app.post('/battles', requireInternalToken, async (req, res) => {
     res.json(snapshot);
   } catch (err) {
     console.error('create battle error:', err);
+    if (err.code === 'UNKNOWN_SPECIES') {
+      return res.status(400).json({ error: 'unknown_species', message: err.message });
+    }
     res.status(500).json({ error: 'create_failed', message: err.message });
   }
 });

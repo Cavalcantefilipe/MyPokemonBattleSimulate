@@ -17,16 +17,39 @@ function resolveMoves(raw) {
   return valid.length > 0 ? valid : ['tackle'];
 }
 
+function speciesCandidates(raw) {
+  const candidates = [];
+  const direct = Dex.species.get(raw);
+  if (direct?.exists && direct.num > 0) {
+    candidates.push(direct.name);
+  }
+
+  const parts = raw.split('-');
+  if (parts.length > 1) {
+    const base = Dex.species.get(parts[0]);
+    if (base?.exists && base.num > 0 && !candidates.includes(base.name)) {
+      candidates.push(base.name);
+    }
+  }
+
+  return candidates;
+}
+
 export function buildSet(entry) {
   const rawSpecies = String(entry.species || entry.name || '').trim();
   if (!rawSpecies) throw new Error('pokemon entry missing species');
 
-  const resolved = Dex.species.get(rawSpecies);
-  const species = resolved?.exists ? resolved.name : rawSpecies;
+  const candidates = speciesCandidates(rawSpecies);
+  if (candidates.length === 0) {
+    const err = new Error(`unknown species: ${rawSpecies}`);
+    err.code = 'UNKNOWN_SPECIES';
+    throw err;
+  }
 
   return {
-    name: entry.nickname || species,
-    species,
+    name: entry.nickname || candidates[0],
+    species: candidates[0],
+    speciesCandidates: candidates,
     gender: entry.gender || '',
     item: entry.item || '',
     ability: entry.ability || '',

@@ -10,17 +10,14 @@ const SWEEP_INTERVAL_MS = 60 * 1000;
 class BattleSession {
   constructor({ id, blueTeam, redTeam, format }) {
     this.id = id;
-    this.blueTeam = blueTeam.map(buildSet);
-    this.redTeam = redTeam.map(buildSet);
+    this.originalBlueTeam = blueTeam.map(buildSet);
+    this.originalRedTeam = redTeam.map(buildSet);
     this.format = format || 'gen9customgame';
     this.createdAt = Date.now();
     this.lastActivity = Date.now();
     this.finished = false;
     this.winner = null;
 
-    this.streams = BattleStreams.getPlayerStreams(
-      new BattleStreams.BattleStream()
-    );
     this.rawLog = [];
     this.unreadLines = [];
     this.pendingRequest = null;
@@ -29,16 +26,48 @@ class BattleSession {
     this.lastRedActive = null;
     this.currentTurn = 0;
 
+    this._bootWithFallback(0);
+  }
+
+  _bootWithFallback(attempt) {
+    const blue = this.originalBlueTeam.map((s) => ({
+      ...s,
+      species: s.speciesCandidates?.[attempt] ?? s.species,
+      name: s.speciesCandidates?.[attempt] ?? s.name,
+    }));
+    const red = this.originalRedTeam.map((s) => ({
+      ...s,
+      species: s.speciesCandidates?.[attempt] ?? s.species,
+      name: s.speciesCandidates?.[attempt] ?? s.name,
+    }));
+    this.blueTeam = blue;
+    this.redTeam = red;
+
+    this.streams = BattleStreams.getPlayerStreams(
+      new BattleStreams.BattleStream()
+    );
     this._ownerLoop = this._consumeOmniscient();
     this._p1Loop = this._consumeP1();
     this._p2Loop = this._consumeP2();
 
-    const startOpts = { formatid: this.format };
-    this.streams.omniscient.write(
-      `>start ${JSON.stringify(startOpts)}\n` +
-      `>player p1 ${JSON.stringify({ name: 'Blue', team: Teams.pack(this.blueTeam) })}\n` +
-      `>player p2 ${JSON.stringify({ name: 'Red', team: Teams.pack(this.redTeam) })}`
-    );
+    try {
+      const startOpts = { formatid: this.format };
+      this.streams.omniscient.write(
+        `>start ${JSON.stringify(startOpts)}\n` +
+        `>player p1 ${JSON.stringify({ name: 'Blue', team: Teams.pack(blue) })}\n` +
+        `>player p2 ${JSON.stringify({ name: 'Red', team: Teams.pack(red) })}`
+      );
+    } catch (err) {
+      const hasMoreCandidates = [...blue, ...red].some(
+        (s) => s.speciesCandidates && attempt + 1 < s.speciesCandidates.length
+      );
+      if (hasMoreCandidates) {
+        this._bootWithFallback(attempt + 1);
+        return;
+      }
+      this.bootError = err.message || String(err);
+      this.finished = true;
+    }
   }
 
   touch() {
