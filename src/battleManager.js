@@ -55,6 +55,10 @@ class BattleSession {
         if (!line) continue;
         this.rawLog.push(line);
         this.unreadLines.push(line);
+        if (line.startsWith('|error|')) {
+          this.bootError = line.slice('|error|'.length).trim();
+          this.finished = true;
+        }
         if (line.startsWith('|win|')) {
           const name = line.slice(5).trim();
           this.winner = name === 'Blue' ? 'blue' : name === 'Red' ? 'red' : null;
@@ -177,6 +181,16 @@ class BattleSession {
     const newLines = this.takeUnread();
     const { events: newEvents, lastTurn } = parseLog(newLines, this.currentTurn);
     this.currentTurn = lastTurn;
+    if (this.bootError) {
+      return {
+        id: this.id,
+        finished: true,
+        winner: null,
+        error: this.bootError,
+        request: null,
+        newEvents,
+      };
+    }
     return {
       id: this.id,
       finished: this.finished,

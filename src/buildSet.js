@@ -1,5 +1,16 @@
 import { Dex } from '@pkmn/sim';
 
+function resolveMoves(raw) {
+  if (!Array.isArray(raw) || raw.length === 0) return ['tackle'];
+  const valid = raw
+    .map((m) => {
+      const move = Dex.moves.get(m);
+      return move?.exists ? move.id : null;
+    })
+    .filter(Boolean);
+  return valid.length > 0 ? valid : ['tackle'];
+}
+
 export function buildSet(entry) {
   const rawSpecies = String(entry.species || entry.name || '').trim();
   if (!rawSpecies) throw new Error('pokemon entry missing species');
@@ -13,10 +24,7 @@ export function buildSet(entry) {
     gender: entry.gender || '',
     item: entry.item || '',
     ability: entry.ability || '',
-    moves:
-      Array.isArray(entry.moves) && entry.moves.length > 0
-        ? entry.moves
-        : ['tackle'],
+    moves: resolveMoves(entry.moves),
     nature: entry.nature || 'Hardy',
     level: entry.level ?? 50,
     evs: entry.evs || { hp: 85, atk: 85, def: 85, spa: 85, spd: 85, spe: 85 },
