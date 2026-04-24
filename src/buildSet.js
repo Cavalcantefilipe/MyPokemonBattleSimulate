@@ -1,13 +1,19 @@
 import { Dex } from '@pkmn/sim';
 
+const MAX_MOVES = 4;
+
 function resolveMoves(raw) {
   if (!Array.isArray(raw) || raw.length === 0) return ['tackle'];
-  const valid = raw
-    .map((m) => {
-      const move = Dex.moves.get(m);
-      return move?.exists ? move.id : null;
-    })
-    .filter(Boolean);
+  const seen = new Set();
+  const valid = [];
+  for (const m of raw) {
+    const move = Dex.moves.get(m);
+    if (!move?.exists) continue;
+    if (seen.has(move.id)) continue;
+    seen.add(move.id);
+    valid.push(move.id);
+    if (valid.length >= MAX_MOVES) break;
+  }
   return valid.length > 0 ? valid : ['tackle'];
 }
 
